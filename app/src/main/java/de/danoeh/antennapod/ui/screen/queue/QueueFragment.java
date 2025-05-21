@@ -296,6 +296,8 @@ public class QueueFragment extends Fragment implements MaterialToolbar.OnMenuIte
         } else if (itemId == R.id.refresh_item) {
             FeedUpdateManager.getInstance().runOnceOrAsk(requireContext());
             return true;
+        } else if (itemId == R.id.add_queue) {
+            return true;
         } else if (itemId == R.id.clear_queue) {
             // make sure the user really wants to clear the queue
             ConfirmationDialog conDialog = new ConfirmationDialog(getActivity(),

@@ -363,6 +363,7 @@
     <string name="checkbox_do_not_show_again">Do not show again</string>
     <string name="clear_queue_label">Clear queue</string>
     <string name="add_queue_label">Add queue</string>
+    <string name="add_queue_dialog_default_title">Name</string>
     <string name="undo">Undo</string>
     <string name="move_to_top_label">Move to top</string>
     <plurals name="move_to_top_message">

@@ -12,7 +12,6 @@ import java.lang.ref.WeakReference;
 import de.danoeh.antennapod.R;
 import de.danoeh.antennapod.databinding.EditTextDialogBinding;
 import de.danoeh.antennapod.storage.database.DBWriter;
-import de.danoeh.antennapod.storage.database.NavDrawerData;
 
 public class AddQueueDialog {
 

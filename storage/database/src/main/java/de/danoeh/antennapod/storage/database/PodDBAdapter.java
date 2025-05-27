@@ -900,6 +900,12 @@ public class PodDBAdapter {
         }
     }
 
+    public void addQueue(String queueName) {
+        ContentValues values = new ContentValues();
+        values.put(KEY_QUEUE_NAME, queueName);
+        db.insert(TABLE_NAME_QUEUE, null, values);
+    }
+
     public void clearQueue() {
         db.delete(TABLE_NAME_QUEUE, null, null);
     }

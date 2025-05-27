@@ -36,14 +36,8 @@ public class AddQueueDialog {
                 .setView(binding.getRoot())
                 .setTitle(R.string.add_queue_label)
                 .setPositiveButton(android.R.string.ok, (d, input) -> {
-                    String newTitle = binding.textInput.getText().toString();
-                    /*
-                    if (feed != null) {
-                        feed.setCustomTitle(newTitle);
-                        DBWriter.setFeedCustomTitle(feed);
-                    } else {
-                        renameTag(newTitle);
-                    }*/
+                    String queueName = binding.textInput.getText().toString();
+                    DBWriter.addQueue(queueName);
                 })
                 .setNeutralButton(R.string.reset, null)
                 .setNegativeButton(R.string.cancel_label, null)

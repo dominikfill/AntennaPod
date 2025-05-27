@@ -328,6 +328,15 @@ public class DBWriter {
 
     }
 
+    public static Future<?> addQueue(final String queueName) {
+        return runOnDbThread(() -> {
+            final PodDBAdapter adapter = PodDBAdapter.getInstance();
+            adapter.open();
+            adapter.addQueue(queueName);
+            adapter.close();
+        });
+    }
+
     /**
      * Inserts a FeedItem in the queue at the specified index. The 'read'-attribute of the FeedItem will be set to
      * true. If the FeedItem is already in the queue, the queue will not be modified.

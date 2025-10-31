@@ -914,6 +914,27 @@ public class PodDBAdapter {
         return count > 0;
     }
 
+    // TODO(dominik): Remove 'df_' prefix when legacy queue handling is removed.
+    /**
+     * Inserts a new named queue into the {@link #TABLE_NAME_QUEUES} table.
+     * This operation is wrapped in a transaction.
+     *
+     * @param name The name of the new queue.
+     */
+    public void df_createQueue(String name) {
+        ContentValues values = new ContentValues();
+        try {
+            db.beginTransactionNonExclusive();
+            values.put(KEY_NAME, name);
+            db.insert(TABLE_NAME_QUEUES, null, values);
+            db.setTransactionSuccessful();
+        } catch (SQLException e) {
+            Log.e(TAG, Log.getStackTraceString(e));
+        } finally {
+            db.endTransaction();
+        }
+    }
+
     public void setQueue(List<FeedItem> queue) {
         ContentValues values = new ContentValues();
         try {

@@ -336,6 +336,27 @@ public class DBWriter {
 
     }
 
+    // TODO(dominik): Remove 'df_' prefix when legacy queue handling is removed.
+    /**
+     * Creates a new, named queue.
+     * This operation is performed asynchronously on the database thread.
+     *
+     * @param context A context used for the database connection and BackupManager.
+     * @param name    The name of the new queue to create.
+     * @return A Future object that can be used to wait for the operation's completion.
+     */
+    public static Future<?> df_createQueue(final Context context, final String name) {
+        return runOnDbThread(() -> {
+            final PodDBAdapter adapter = PodDBAdapter.getInstance();
+            adapter.open();
+            adapter.df_createQueue(name);
+            adapter.close();
+
+            BackupManager backupManager = new BackupManager(context);
+            backupManager.dataChanged();
+        });
+    }
+
     /**
      * Inserts a FeedItem in the queue at the specified index. The 'read'-attribute of the FeedItem will be set to
      * true. If the FeedItem is already in the queue, the queue will not be modified.

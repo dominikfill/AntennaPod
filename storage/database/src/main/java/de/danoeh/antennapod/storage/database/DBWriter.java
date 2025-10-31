@@ -530,36 +530,6 @@ public class DBWriter {
         }
     }
 
-    public static Future<?> toggleFavoriteItem(final FeedItem item) {
-        if (item.isTagged(FeedItem.TAG_FAVORITE)) {
-            return removeFavoriteItem(item);
-        } else {
-            return addFavoriteItem(item);
-        }
-    }
-
-    public static Future<?> addFavoriteItem(final FeedItem item) {
-        return runOnDbThread(() -> {
-            final PodDBAdapter adapter = PodDBAdapter.getInstance().open();
-            adapter.addFavoriteItem(item);
-            adapter.close();
-            item.addTag(FeedItem.TAG_FAVORITE);
-            EventBus.getDefault().post(new FavoritesEvent());
-            EventBus.getDefault().post(FeedItemEvent.updated(item));
-        });
-    }
-
-    public static Future<?> removeFavoriteItem(final FeedItem item) {
-        return runOnDbThread(() -> {
-            final PodDBAdapter adapter = PodDBAdapter.getInstance().open();
-            adapter.removeFavoriteItem(item);
-            adapter.close();
-            item.removeTag(FeedItem.TAG_FAVORITE);
-            EventBus.getDefault().post(new FavoritesEvent());
-            EventBus.getDefault().post(FeedItemEvent.updated(item));
-        });
-    }
-
     /**
      * Changes the position of a FeedItem in the queue.
      *
@@ -632,6 +602,36 @@ public class DBWriter {
             Log.w(TAG, "moveToTop: " + moveToTop +  " - Queue was not modified.");
         }
         adapter.close();
+    }
+
+    public static Future<?> toggleFavoriteItem(final FeedItem item) {
+        if (item.isTagged(FeedItem.TAG_FAVORITE)) {
+            return removeFavoriteItem(item);
+        } else {
+            return addFavoriteItem(item);
+        }
+    }
+
+    public static Future<?> addFavoriteItem(final FeedItem item) {
+        return runOnDbThread(() -> {
+            final PodDBAdapter adapter = PodDBAdapter.getInstance().open();
+            adapter.addFavoriteItem(item);
+            adapter.close();
+            item.addTag(FeedItem.TAG_FAVORITE);
+            EventBus.getDefault().post(new FavoritesEvent());
+            EventBus.getDefault().post(FeedItemEvent.updated(item));
+        });
+    }
+
+    public static Future<?> removeFavoriteItem(final FeedItem item) {
+        return runOnDbThread(() -> {
+            final PodDBAdapter adapter = PodDBAdapter.getInstance().open();
+            adapter.removeFavoriteItem(item);
+            adapter.close();
+            item.removeTag(FeedItem.TAG_FAVORITE);
+            EventBus.getDefault().post(new FavoritesEvent());
+            EventBus.getDefault().post(FeedItemEvent.updated(item));
+        });
     }
 
     public static Future<?> resetPagedFeedPage(Feed feed) {

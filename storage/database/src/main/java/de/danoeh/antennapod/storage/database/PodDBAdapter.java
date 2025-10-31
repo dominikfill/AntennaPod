@@ -1124,6 +1124,17 @@ public class PodDBAdapter {
         return db.rawQuery(query, null);
     }
 
+    public int getQueueSize() {
+        final String query = String.format("SELECT COUNT(%s) FROM %s", KEY_ID, TABLE_NAME_QUEUE);
+        Cursor c = db.rawQuery(query, null);
+        int result = 0;
+        if (c.moveToFirst()) {
+            result = c.getInt(0);
+        }
+        c.close();
+        return result;
+    }
+
     public final Cursor getFavoritesIdsCursor() {
         final String query = "SELECT " + TABLE_NAME_FAVORITES + "." + KEY_FEEDITEM
                 + " FROM " + TABLE_NAME_FAVORITES;
@@ -1324,17 +1335,6 @@ public class PodDBAdapter {
                 + " LIMIT 1"
                 + " OFFSET (SELECT count(*)/2 " + from + ")";
         return db.rawQuery(query, null);
-    }
-
-    public int getQueueSize() {
-        final String query = String.format("SELECT COUNT(%s) FROM %s", KEY_ID, TABLE_NAME_QUEUE);
-        Cursor c = db.rawQuery(query, null);
-        int result = 0;
-        if (c.moveToFirst()) {
-            result = c.getInt(0);
-        }
-        c.close();
-        return result;
     }
 
     public final Map<Long, Integer> getFeedCounters(FeedCounter setting, long... feedIds) {

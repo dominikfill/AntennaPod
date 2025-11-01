@@ -1190,6 +1190,22 @@ public class PodDBAdapter {
         return db.rawQuery(query, null);
     }
 
+    /**
+     * Returns a cursor that queries all raw queue items from the
+     * {@link #TABLE_NAME_QUEUE_ITEMS} table.
+     *
+     * <p>The results are ordered by the item's primary key ({@link #KEY_ID} ASC).</p>
+     *
+     * @return A non-null cursor containing all raw queue item entries.
+     */
+    public final Cursor df_getAllQueueItemsCursor() {
+        final String query = "SELECT " + KEY_ID + ", " + KEY_QUEUE + ", " + KEY_FEEDITEM + ", "
+                + KEY_FEED + ", " + KEY_POSITION
+                + " FROM " + TABLE_NAME_QUEUE_ITEMS
+                + " ORDER BY " + TABLE_NAME_QUEUE_ITEMS + "." + KEY_ID;
+        return db.rawQuery(query, null);
+    }
+
     public Cursor getNextInQueue(final FeedItem item) {
         final String query = "SELECT " + KEYS_FEED_ITEM_WITHOUT_DESCRIPTION + ", " + KEYS_FEED_MEDIA
                 + " FROM " + TABLE_NAME_QUEUE

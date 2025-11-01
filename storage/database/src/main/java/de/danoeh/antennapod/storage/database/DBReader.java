@@ -11,8 +11,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import de.danoeh.antennapod.model.feed.Chapter;
 import de.danoeh.antennapod.model.feed.Feed;
@@ -26,11 +28,13 @@ import de.danoeh.antennapod.model.feed.SortOrder;
 import de.danoeh.antennapod.model.feed.SubscriptionsFilter;
 import de.danoeh.antennapod.model.download.DownloadResult;
 import de.danoeh.antennapod.model.queue.Queue;
+import de.danoeh.antennapod.model.queue.QueueItem;
 import de.danoeh.antennapod.storage.database.mapper.ChapterCursor;
 import de.danoeh.antennapod.storage.database.mapper.DownloadResultCursor;
 import de.danoeh.antennapod.storage.database.mapper.FeedCursor;
 import de.danoeh.antennapod.storage.database.mapper.FeedItemCursor;
 import de.danoeh.antennapod.storage.database.mapper.queue.QueueCursor;
+import de.danoeh.antennapod.storage.database.mapper.queue.QueueItemCursor;
 
 /**
  * Provides methods for reading data from the AntennaPod database.
@@ -115,6 +119,48 @@ public final class DBReader {
                 item.addTag(FeedItem.TAG_FAVORITE);
             }
             if (queueIds.contains(item.getId())) {
+                item.addTag(FeedItem.TAG_QUEUE);
+            }
+        }
+    }
+
+    // TODO(dominik): Remove 'df_' prefix when legacy queue handling is removed.
+    /**
+     * Populates a list of {@link FeedItem} objects with additional data
+     * from the database that is not loaded by default, such as tags and
+     * their parent {@link Feed} object.
+     *
+     * @param items The list of {@link FeedItem} objects to populate.
+     */
+    public static void df_loadAdditionalFeedItemListData(List<FeedItem> items) {
+        df_loadTagsOfFeedItemList(items);
+        loadFeedDataOfFeedItemList(items);
+    }
+
+    // TODO(dominik): Remove 'df_' prefix when legacy queue handling is removed.
+    /**
+     * Populates a list of {@link FeedItem} objects with their correct "Favorite" and "Queue" tags.
+     *
+     * <p>This operation must NOT be called on the main thread as it performs
+     * multiple database queries.</p>
+     *
+     * @param items The list of {@link FeedItem} objects to populate with tags.
+     * This list is modified in-place.
+     */
+    private static void df_loadTagsOfFeedItemList(List<FeedItem> items) {
+        LongList favoriteIds = getFavoriteIDList();
+        List<QueueItem> queueItems = df_getAllQueueItems();
+
+        Set<Long> queuedItemsIds = new HashSet<>(queueItems.size());
+        for (QueueItem queueItem : queueItems) {
+            queuedItemsIds.add(queueItem.getFeedItemId());
+        }
+
+        for (FeedItem item : items) {
+            if (favoriteIds.contains(item.getId())) {
+                item.addTag(FeedItem.TAG_FAVORITE);
+            }
+            if (queuedItemsIds.contains(item.getId())) {
                 item.addTag(FeedItem.TAG_QUEUE);
             }
         }
@@ -275,6 +321,38 @@ public final class DBReader {
 
     // TODO(dominik): Remove 'df_' prefix when legacy queue handling is removed.
     /**
+     * Loads a list of ALL {@link QueueItem} objects from the database.
+     *
+     * <p>This is a database operation and must NOT be called on the main thread.</p>
+     *
+     * @return A non-null list of all {@link QueueItem} objects currently
+     * in the {@link PodDBAdapter#TABLE_NAME_QUEUE_ITEMS} table.
+     */
+    @NonNull
+    public static List<QueueItem> df_getAllQueueItems() {
+        Log.d(TAG, "df_getAllQueueItems() called");
+
+        PodDBAdapter adapter = PodDBAdapter.getInstance();
+        adapter.open();
+        try (QueueItemCursor cursor = new QueueItemCursor(adapter.df_getAllQueueItemsCursor())) {
+            return df_extractQueueItemListFromCursor(cursor);
+        } finally {
+            adapter.close();
+        }
+    }
+
+    // TODO(dominik): Remove 'df_' prefix when legacy queue handling is removed.
+    @NonNull
+    private static List<QueueItem> df_extractQueueItemListFromCursor(QueueItemCursor cursor) {
+        List<QueueItem> result = new ArrayList<>(cursor.getCount());
+        while (cursor.moveToNext()) {
+            result.add(cursor.getQueueItem());
+        }
+        return result;
+    }
+
+    // TODO(dominik): Remove 'df_' prefix when legacy queue handling is removed.
+    /**
      * Loads the list of {@link FeedItem} objects for a specific queue.
      * This method loads the full item, feed, and tag data for each item.
      *
@@ -292,7 +370,7 @@ public final class DBReader {
         adapter.open();
         try (FeedItemCursor cursor = new FeedItemCursor(adapter.df_getQueuedFeedItemsCursor(queueId))) {
             List<FeedItem> items = extractItemlistFromCursor(cursor);
-            loadAdditionalFeedItemListData(items);
+            df_loadAdditionalFeedItemListData(items);
             return items;
         } finally {
             adapter.close();

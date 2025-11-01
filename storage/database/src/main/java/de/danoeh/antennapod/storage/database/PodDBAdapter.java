@@ -1598,12 +1598,35 @@ public class PodDBAdapter {
             db.execSQL(CREATE_INDEX_FEEDMEDIA_FEEDITEM);
             db.execSQL(CREATE_INDEX_QUEUE_FEEDITEM);
             db.execSQL(CREATE_INDEX_SIMPLECHAPTERS_FEEDITEM);
+
+            df_createQueue(db);
         }
 
         @Override
         public void onUpgrade(final SQLiteDatabase db, final int oldVersion, final int newVersion) {
             Log.w("DBAdapter", "Upgrading from version " + oldVersion + " to " + newVersion + ".");
             DBUpgrader.upgrade(db, oldVersion, newVersion);
+        }
+
+        // TODO(dominik): Remove 'df_' prefix when legacy queue handling is removed.
+        /**
+         * Inserts a new named queue into the {@link #TABLE_NAME_QUEUES} table.
+         * This operation is wrapped in a transaction.
+         *
+         * @param db The database instance to perform the transaction on.
+         */
+        public void df_createQueue(SQLiteDatabase db) {
+            ContentValues values = new ContentValues();
+            try {
+                db.beginTransactionNonExclusive();
+                values.put(KEY_NAME, "Queue");
+                db.insert(TABLE_NAME_QUEUES, null, values);
+                db.setTransactionSuccessful();
+            } catch (SQLException e) {
+                Log.e(TAG, Log.getStackTraceString(e));
+            } finally {
+                db.endTransaction();
+            }
         }
     }
 }

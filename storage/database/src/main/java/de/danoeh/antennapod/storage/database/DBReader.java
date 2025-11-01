@@ -236,6 +236,45 @@ public final class DBReader {
         }
     }
 
+    /**
+     * Get next feed item in queue following a particular feeditem
+     *
+     * @param item The FeedItem
+     * @return The FeedItem next in queue or null if the FeedItem could not be found.
+     */
+    @Nullable
+    public static FeedItem getNextInQueue(FeedItem item) {
+        Log.d(TAG, "getNextInQueue() called with: " + "itemId = [" + item.getId() + "]");
+        PodDBAdapter adapter = PodDBAdapter.getInstance();
+        adapter.open();
+        try (FeedItemCursor cursor = new FeedItemCursor(adapter.getNextInQueue(item))) {
+            List<FeedItem> list = extractItemlistFromCursor(cursor);
+            if (!list.isEmpty()) {
+                FeedItem nextItem = list.get(0);
+                loadAdditionalFeedItemListData(list);
+                return nextItem;
+            }
+            return null;
+        } catch (Exception e) {
+            return null;
+        } finally {
+            adapter.close();
+        }
+    }
+
+    @NonNull
+    public static List<FeedItem> getPausedQueue(int limit) {
+        PodDBAdapter adapter = PodDBAdapter.getInstance();
+        adapter.open();
+        try (FeedItemCursor cursor = new FeedItemCursor(adapter.getPausedQueueCursor(limit))) {
+            List<FeedItem> items = extractItemlistFromCursor(cursor);
+            loadAdditionalFeedItemListData(items);
+            return items;
+        } finally {
+            adapter.close();
+        }
+    }
+
     private static LongList getFavoriteIDList() {
         Log.d(TAG, "getFavoriteIDList() called");
 
@@ -415,45 +454,6 @@ public final class DBReader {
             adapter.close();
         }
         return null;
-    }
-
-    /**
-     * Get next feed item in queue following a particular feeditem
-     *
-     * @param item The FeedItem
-     * @return The FeedItem next in queue or null if the FeedItem could not be found.
-     */
-    @Nullable
-    public static FeedItem getNextInQueue(FeedItem item) {
-        Log.d(TAG, "getNextInQueue() called with: " + "itemId = [" + item.getId() + "]");
-        PodDBAdapter adapter = PodDBAdapter.getInstance();
-        adapter.open();
-        try (FeedItemCursor cursor = new FeedItemCursor(adapter.getNextInQueue(item))) {
-            List<FeedItem> list = extractItemlistFromCursor(cursor);
-            if (!list.isEmpty()) {
-                FeedItem nextItem = list.get(0);
-                loadAdditionalFeedItemListData(list);
-                return nextItem;
-            }
-            return null;
-        } catch (Exception e) {
-            return null;
-        } finally {
-            adapter.close();
-        }
-    }
-
-    @NonNull
-    public static List<FeedItem> getPausedQueue(int limit) {
-        PodDBAdapter adapter = PodDBAdapter.getInstance();
-        adapter.open();
-        try (FeedItemCursor cursor = new FeedItemCursor(adapter.getPausedQueueCursor(limit))) {
-            List<FeedItem> items = extractItemlistFromCursor(cursor);
-            loadAdditionalFeedItemListData(items);
-            return items;
-        } finally {
-            adapter.close();
-        }
     }
 
     /**

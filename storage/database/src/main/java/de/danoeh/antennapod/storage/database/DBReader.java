@@ -273,6 +273,32 @@ public final class DBReader {
         return result;
     }
 
+    // TODO(dominik): Remove 'df_' prefix when legacy queue handling is removed.
+    /**
+     * Loads the list of {@link FeedItem} objects for a specific queue.
+     * This method loads the full item, feed, and tag data for each item.
+     *
+     * <p>This is a database operation and must NOT be called on the main thread.
+     *
+     * @param queueId The ID of the queue to load.
+     * @return A non-null list of {@link FeedItem} objects, sorted by their queue position.
+     * The list will be empty if the queue is not found or has no items.
+     */
+    @NonNull
+    public static List<FeedItem> df_getQueuedFeedItems(final long queueId) {
+        Log.d(TAG, "df_getQueuedFeedItems() called");
+
+        PodDBAdapter adapter = PodDBAdapter.getInstance();
+        adapter.open();
+        try (FeedItemCursor cursor = new FeedItemCursor(adapter.df_getQueuedFeedItemsCursor(queueId))) {
+            List<FeedItem> items = extractItemlistFromCursor(cursor);
+            loadAdditionalFeedItemListData(items);
+            return items;
+        } finally {
+            adapter.close();
+        }
+    }
+
     /**
      * Get next feed item in queue following a particular feeditem
      *

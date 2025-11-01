@@ -935,6 +935,7 @@ public class PodDBAdapter {
         }
     }
 
+    // TODO(dominik): Delete when legacy queue handling is removed.
     public void setQueue(List<FeedItem> queue) {
         ContentValues values = new ContentValues();
         try {
@@ -946,6 +947,41 @@ public class PodDBAdapter {
                 values.put(KEY_FEEDITEM, item.getId());
                 values.put(KEY_FEED, item.getFeed().getId());
                 db.insertWithOnConflict(TABLE_NAME_QUEUE, null, values, SQLiteDatabase.CONFLICT_REPLACE);
+            }
+            db.setTransactionSuccessful();
+        } catch (SQLException e) {
+            Log.e(TAG, Log.getStackTraceString(e));
+        } finally {
+            db.endTransaction();
+        }
+    }
+
+    // TODO(dominik): Remove 'df_' prefix when legacy queue handling is removed.
+    /**
+     * Overwrites the complete contents of a specific queue with a new list of feed items.
+     *
+     * <p>This method performs a "delete-all, insert-all" operation within a single
+     * transaction. It first deletes all existing items for the given {@code queueId}
+     * from {@link #TABLE_NAME_QUEUE_ITEMS}, then inserts every item from the
+     * provided list, using the list index as the new position.</p>
+     *
+     * @param queueId The ID (from {@link #TABLE_NAME_QUEUES}) of the queue to modify.
+     * @param queue   The complete list of {@link FeedItem}s that will replace the
+     *      queue's current contents. The list's order will be preserved
+     *      as the new position.
+     */
+    public void df_setQueue(final long queueId, List<FeedItem> queue) {
+        ContentValues values = new ContentValues();
+        try {
+            db.beginTransactionNonExclusive();
+            db.delete(TABLE_NAME_QUEUE_ITEMS, KEY_QUEUE + " = " + queueId, null);
+            for (int i = 0; i < queue.size(); i++) {
+                FeedItem item = queue.get(i);
+                values.put(KEY_QUEUE, queueId);
+                values.put(KEY_FEEDITEM, item.getId());
+                values.put(KEY_FEED, item.getFeed().getId());
+                values.put(KEY_POSITION, i);
+                db.insertWithOnConflict(TABLE_NAME_QUEUE_ITEMS, null, values, SQLiteDatabase.CONFLICT_REPLACE);
             }
             db.setTransactionSuccessful();
         } catch (SQLException e) {
@@ -1128,6 +1164,30 @@ public class PodDBAdapter {
 
     public Cursor getQueueIDCursor() {
         return db.query(TABLE_NAME_QUEUE, new String[]{KEY_FEEDITEM}, null, null, null, null, KEY_ID + " ASC", null);
+    }
+
+    // TODO(dominik): Remove 'df_' prefix when legacy queue handling is removed.
+    /**
+     * Returns a cursor which contains all feed items for a specific queue,
+     * joined with their media and feed data.
+     *
+     * <p>The cursor selects from {@link #TABLE_NAME_QUEUE_ITEMS} and returns
+     * columns matching the {@link #KEYS_FEED_ITEM_WITHOUT_DESCRIPTION} and
+     * {@link #KEYS_FEED_MEDIA} projections.</p>
+     *
+     * @param queueId The ID of the queue (from {@link #TABLE_NAME_QUEUES}) to retrieve.
+     * @return A non-null cursor containing the feed items, ordered by their queue position
+     *      ({@link #KEY_POSITION} ASC).
+     */
+    public Cursor df_getQueuedFeedItemsCursor(final long queueId) {
+        final String query = "SELECT " + KEYS_FEED_ITEM_WITHOUT_DESCRIPTION + ", " + KEYS_FEED_MEDIA
+                + " FROM " + TABLE_NAME_QUEUE_ITEMS
+                + " INNER JOIN " + TABLE_NAME_FEED_ITEMS
+                + " ON " + TABLE_NAME_FEED_ITEMS + "." + KEY_ID + "=" + TABLE_NAME_QUEUE_ITEMS + "." + KEY_FEEDITEM
+                + JOIN_FEED_ITEM_AND_MEDIA
+                + " WHERE " + KEY_QUEUE + "=" + queueId
+                + " ORDER BY " + TABLE_NAME_QUEUE_ITEMS + "." + KEY_POSITION;
+        return db.rawQuery(query, null);
     }
 
     public Cursor getNextInQueue(final FeedItem item) {

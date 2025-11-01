@@ -391,6 +391,7 @@ public class DBWriter {
         });
     }
 
+    // TODO(dominik): Delete when legacy queue handling is removed.
     /**
      * Appends FeedItem objects to the end of the queue. The 'read'-attribute of all items will be set to true.
      * If a FeedItem is already in the queue, the FeedItem will not change its position in the queue.
@@ -442,6 +443,83 @@ public class DBWriter {
                     DBWriter.markItemPlayed(FeedItem.UNPLAYED, markAsUnplayedIds.toArray());
                 }
             }
+            adapter.close();
+            AutoDownloadManager.getInstance().autodownloadUndownloadedItems(context);
+        });
+    }
+
+    // TODO(dominik): Remove 'df_' prefix when legacy queue handling is removed.
+    /**
+     * Adds one or more FeedItem objects to a specific queue.
+     *
+     * <p>This operation runs asynchronously on the database thread. It determines the
+     * correct insertion point using the {@link ItemEnqueuePositionCalculator},
+     * respecting user preferences like 'Add to Front' or 'After Currently Playing'.</p>
+     *
+     * <p>If an item is already present in this specific queue, it will be skipped.</p>
+     *
+     * <p>If the user's "Keep Sorted" preference is enabled, the queue will be
+     * automatically re-sorted after the new items are added.</p>
+     *
+     * @param context  A context used for the database connection and auto-download manager.
+     * @param queueId  The ID of the specific queue (from {@link PodDBAdapter#TABLE_NAME_QUEUES})
+     *      to which the items should be added.
+     * @param items    One or more {@link FeedItem} objects to add.
+     * @return A Future object that can be used to wait for the operation's completion.
+     */
+    public static Future<?> df_addFeedItemToQueue(final Context context, final long queueId, final FeedItem... items) {
+        return runOnDbThread(() -> {
+            if (items.length < 1) {
+                return;
+            }
+
+            final PodDBAdapter adapter = PodDBAdapter.getInstance();
+            adapter.open();
+            final List<FeedItem> queue = DBReader.df_getQueuedFeedItems(queueId);
+
+            LongList markAsUnplayedIds = new LongList();
+            List<QueueEvent> events = new ArrayList<>();
+            List<FeedItem> updatedItems = new ArrayList<>();
+
+            ItemEnqueuePositionCalculator positionCalculator =
+                    new ItemEnqueuePositionCalculator(UserPreferences.getEnqueueLocation());
+            Playable currentlyPlaying = DBReader.getFeedMedia(PlaybackPreferences.getCurrentlyPlayingFeedMediaId());
+            int insertPosition = positionCalculator.calcPosition(queue, currentlyPlaying);
+
+            for (FeedItem item : items) {
+                if (itemListContains(queue, item.getId())) {
+                    continue;
+                } else if (!item.hasMedia()) {
+                    continue;
+                }
+
+                queue.add(insertPosition, item);
+                events.add(QueueEvent.added(item, insertPosition));
+
+                item.addTag(FeedItem.TAG_QUEUE);
+                updatedItems.add(item);
+
+                if (item.isNew()) {
+                    markAsUnplayedIds.add(item.getId());
+                }
+                insertPosition++;
+            }
+
+            if (!updatedItems.isEmpty()) {
+                applySortOrder(queue, events);
+                adapter.df_setQueue(queueId, queue);
+
+                for (QueueEvent event : events) {
+                    EventBus.getDefault().post(event);
+                }
+
+                EventBus.getDefault().post(FeedItemEvent.updated(updatedItems));
+
+                if (markAsUnplayedIds.size() > 0) {
+                    DBWriter.markItemPlayed(FeedItem.UNPLAYED, markAsUnplayedIds.toArray());
+                }
+            }
+
             adapter.close();
             AutoDownloadManager.getInstance().autodownloadUndownloadedItems(context);
         });

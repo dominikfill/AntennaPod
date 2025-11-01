@@ -25,10 +25,12 @@ import de.danoeh.antennapod.model.feed.FeedPreferences;
 import de.danoeh.antennapod.model.feed.SortOrder;
 import de.danoeh.antennapod.model.feed.SubscriptionsFilter;
 import de.danoeh.antennapod.model.download.DownloadResult;
+import de.danoeh.antennapod.model.queue.Queue;
 import de.danoeh.antennapod.storage.database.mapper.ChapterCursor;
 import de.danoeh.antennapod.storage.database.mapper.DownloadResultCursor;
 import de.danoeh.antennapod.storage.database.mapper.FeedCursor;
 import de.danoeh.antennapod.storage.database.mapper.FeedItemCursor;
+import de.danoeh.antennapod.storage.database.mapper.queue.QueueCursor;
 
 /**
  * Provides methods for reading data from the AntennaPod database.
@@ -234,6 +236,41 @@ public final class DBReader {
         } finally {
             adapter.close();
         }
+    }
+
+    // TODO(dominik): Remove 'df_' prefix when legacy queue handling is removed.
+    /**
+     * Loads a list of all existing queues from the database.
+     * This method must not be called on the main thread.
+     *
+     * <p><b>Important:</b> The {@link Queue} objects in the returned list are not
+     * fully populated. Their internal list of items will be empty.
+     * The items for a specific queue must be loaded separately when needed.
+     *
+     * @return A non-null list of all {@link Queue} objects,
+     * sorted by their creation ID.
+     */
+    @NonNull
+    public static List<Queue> df_getAllQueues() {
+        Log.d(TAG, "df_getAllQueues() called");
+
+        PodDBAdapter adapter = PodDBAdapter.getInstance();
+        adapter.open();
+        try (QueueCursor cursor = new QueueCursor(adapter.df_getAllQueuesCursor())) {
+            return df_extractQueuesListFromCursor(cursor);
+        } finally {
+            adapter.close();
+        }
+    }
+
+    // TODO(dominik): Remove 'df_' prefix when legacy queue handling is removed.
+    @NonNull
+    public static List<Queue> df_extractQueuesListFromCursor(QueueCursor cursor) {
+        List<Queue> result = new ArrayList<>(cursor.getCount());
+        while (cursor.moveToNext()) {
+            result.add(cursor.getQueue());
+        }
+        return result;
     }
 
     /**

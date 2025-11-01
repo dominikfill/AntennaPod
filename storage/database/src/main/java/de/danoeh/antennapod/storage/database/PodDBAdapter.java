@@ -1111,6 +1111,21 @@ public class PodDBAdapter {
         return db.rawQuery(query, null);
     }
 
+    // TODO(dominik): Remove 'df_' prefix when legacy queue handling is removed.
+    /**
+     * Returns a cursor that queries all existing queues
+     * from the {@link #TABLE_NAME_QUEUES} table,
+     * ordered by their ID.
+     *
+     * @return A cursor containing all queues.
+     */
+    public final Cursor df_getAllQueuesCursor() {
+        final String query = "SELECT " + KEY_ID + "," + KEY_NAME
+                + " FROM " + TABLE_NAME_QUEUES
+                + " ORDER BY " + TABLE_NAME_QUEUES + "." + KEY_ID;
+        return db.rawQuery(query, null);
+    }
+
     public Cursor getQueueIDCursor() {
         return db.query(TABLE_NAME_QUEUE, new String[]{KEY_FEEDITEM}, null, null, null, null, KEY_ID + " ASC", null);
     }

@@ -439,6 +439,18 @@ public class PodDBAdapter {
         // do nothing
     }
 
+    public void beginTransactionNonExclusive() {
+        db.beginTransactionNonExclusive();
+    }
+
+    public void setTransactionSuccessful() {
+        db.setTransactionSuccessful();
+    }
+
+    public void endTransaction() {
+        db.endTransaction();
+    }
+
     /**
      * <p>Resets all database connections to ensure new database connections for
      * the next test case. Call method only for unit tests.</p>

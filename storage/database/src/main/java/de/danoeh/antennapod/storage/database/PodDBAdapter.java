@@ -1014,6 +1014,20 @@ public class PodDBAdapter {
                 + " WHERE " + KEY_QUEUE + "=?", new String[]{String.valueOf(queueId)});
     }
 
+    // TODO(dominik): Remove 'df_' prefix when legacy queue handling is removed.
+    public void df_removeQueueAndQueueItems(final long queueId) {
+        try {
+            db.beginTransactionNonExclusive();
+            db.delete(TABLE_NAME_QUEUES, KEY_ID + "=?", new String[]{String.valueOf(queueId)});
+            db.delete(TABLE_NAME_QUEUE_ITEMS, KEY_QUEUE + "=?", new String[]{String.valueOf(queueId)});
+            db.setTransactionSuccessful();
+        } catch (SQLException e) {
+            Log.e(TAG, Log.getStackTraceString(e));
+        } finally {
+            db.endTransaction();
+        }
+    }
+
     /**
      * Remove the listed items and their FeedMedia entries.
      */

@@ -1218,6 +1218,41 @@ public class PodDBAdapter {
         return db.rawQuery(query, null);
     }
 
+    /**
+     * Returns a cursor which contains FeedItem and QueueItem info for all items
+     * matching the given IN clause.
+     *
+     * @param inClause      A SQL IN clause, e.g., "(?,?,?)"
+     * @param selectionArgs An array of FeedItem IDs
+     * @return A cursor containing queue ID, position, and full FeedItem/Media data.
+     */
+    public final Cursor df_getQueueItemsInfoCursor(String inClause, String[] selectionArgs) {
+        final String query = "SELECT "
+                + TABLE_NAME_QUEUE_ITEMS + "." + KEY_QUEUE + ", "
+                + TABLE_NAME_QUEUE_ITEMS + "." + KEY_POSITION + ", "
+                + KEYS_FEED_ITEM_WITHOUT_DESCRIPTION + ", "
+                + KEYS_FEED_MEDIA
+                + " FROM " + TABLE_NAME_QUEUE_ITEMS
+                + " INNER JOIN " + TABLE_NAME_FEED_ITEMS
+                + " ON " + TABLE_NAME_QUEUE_ITEMS + "." + KEY_FEEDITEM + "=" + TABLE_NAME_FEED_ITEMS + "." + KEY_ID
+                + " LEFT JOIN " + TABLE_NAME_FEED_MEDIA
+                + " ON " + TABLE_NAME_FEED_ITEMS + "." + KEY_ID + "=" + TABLE_NAME_FEED_MEDIA + "." + KEY_FEEDITEM + " "
+                + " WHERE " + TABLE_NAME_QUEUE_ITEMS + "." + KEY_FEEDITEM + " IN (" + inClause + ")";
+        return db.rawQuery(query, selectionArgs);
+    }
+
+    /**
+     * Deletes rows from the QueueItems table based on a list of FeedItem IDs.
+     *
+     * @param inClause      A SQL IN clause, e.g., "(?,?,?)"
+     * @param selectionArgs An array of FeedItem IDs
+     */
+    public void df_removeQueueItemsByFeedItemIds(String inClause, String[] selectionArgs) {
+        String deleteSql = "DELETE FROM " + TABLE_NAME_QUEUE_ITEMS
+                + " WHERE " + KEY_FEEDITEM + " IN (" + inClause + ")";
+        db.execSQL(deleteSql, selectionArgs);
+    }
+
     public Cursor getNextInQueue(final FeedItem item) {
         final String query = "SELECT " + KEYS_FEED_ITEM_WITHOUT_DESCRIPTION + ", " + KEYS_FEED_MEDIA
                 + " FROM " + TABLE_NAME_QUEUE

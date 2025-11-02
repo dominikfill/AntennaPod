@@ -555,6 +555,7 @@ public class DBWriter {
         events.add(QueueEvent.sorted(queue));
     }
 
+    // TODO(dominik): Delete when legacy queue handling is removed.
     /**
      * Removes all FeedItem objects from the queue.
      */
@@ -563,6 +564,33 @@ public class DBWriter {
             PodDBAdapter adapter = PodDBAdapter.getInstance();
             adapter.open();
             adapter.clearQueue();
+            adapter.close();
+
+            EventBus.getDefault().post(QueueEvent.cleared());
+        });
+    }
+
+    // TODO(dominik): Remove 'df_' prefix when legacy queue handling is removed.
+    /**
+     * Removes all FeedItem objects from a specific queue.
+     *
+     * <p>This operation runs asynchronously on the database thread. It will call
+     * {@link PodDBAdapter#df_clearQueue(long)} to delete all entries for the
+     * given {@code queueId} from the {@link PodDBAdapter#TABLE_NAME_QUEUE_ITEMS} table.</p>
+     *
+     * <p>After the database operation, this method posts a global
+     * {@link de.danoeh.antennapod.event.QueueEvent#cleared()} event to
+     * notify the UI to refresh.</p>
+     *
+     * @param queueId The ID of the queue (from {@link PodDBAdapter#TABLE_NAME_QUEUES})
+     *      to be cleared.
+     * @return A Future object that can be used to wait for the operation's completion.
+     */
+    public static Future<?> df_clearQueue(final long queueId) {
+        return runOnDbThread(() -> {
+            PodDBAdapter adapter = PodDBAdapter.getInstance();
+            adapter.open();
+            adapter.df_clearQueue(queueId);
             adapter.close();
 
             EventBus.getDefault().post(QueueEvent.cleared());

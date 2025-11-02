@@ -1003,8 +1003,15 @@ public class PodDBAdapter {
         }
     }
 
+    // TODO(dominik): Delete when legacy queue handling is removed.
     public void clearQueue() {
         db.delete(TABLE_NAME_QUEUE, null, null);
+    }
+
+    // TODO(dominik): Remove 'df_' prefix when legacy queue handling is removed.
+    public void df_clearQueue(final long queueId) {
+        db.execSQL("DELETE FROM " + TABLE_NAME_QUEUE_ITEMS
+                + " WHERE " + KEY_QUEUE + "=?", new String[]{String.valueOf(queueId)});
     }
 
     /**

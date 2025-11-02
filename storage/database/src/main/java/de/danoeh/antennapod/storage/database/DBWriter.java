@@ -834,14 +834,50 @@ public class DBWriter {
         });
     }
 
+    // TODO(dominik): Remove 'df_' prefix when legacy queue handling is removed.
+    /**
+     * Changes the position of a FeedItem in a specific queue.
+     *
+     * <p>This operation runs asynchronously on the database thread. It reads the
+     * entire queue, modifies it in memory, and writes the full queue
+     * back to the database in a transaction.</p>
+     *
+     * @param queueId         The ID of the queue to modify.
+     * @param from            Source index. Must be in range 0..queue.size()-1.
+     * @param to              Destination index. Must be in range 0..queue.size()-1.
+     * @param broadcastUpdate true if this operation should trigger a QueueUpdateBroadcast.
+     * @throws IndexOutOfBoundsException if (to < 0 || to >= queue.size()) || (from < 0 || from >= queue.size())
+     */
+    public static Future<?> df_moveQueueItem(final long queueId, final int from, final int to, final boolean broadcastUpdate) {
+        return runOnDbThread(() -> {
+            final PodDBAdapter adapter = PodDBAdapter.getInstance();
+            adapter.open();
+            final List<FeedItem> queue = DBReader.df_getFeedItemsInQueue(queueId);
+
+            if (from >= 0 && from < queue.size() && to >= 0 && to < queue.size()) {
+                final FeedItem item = queue.remove(from);
+                queue.add(to, item);
+
+                adapter.df_setQueue(queueId, queue);
+                if (broadcastUpdate) {
+                    EventBus.getDefault().post(QueueEvent.moved(item, to));
+                }
+            }
+            adapter.close();
+        });
+    }
+
+    // TODO(dominik): Delete when legacy queue handling is removed.
     public static Future<?> moveQueueItemsToTop(final List<FeedItem> items) {
         return runOnDbThread(() -> moveQueueItemsSynchronous(true, items));
     }
 
+    // TODO(dominik): Delete when legacy queue handling is removed.
     public static Future<?> moveQueueItemsToBottom(final List<FeedItem> items) {
         return runOnDbThread(() -> moveQueueItemsSynchronous(false, items));
     }
 
+    // TODO(dominik): Delete when legacy queue handling is removed.
     private static void moveQueueItemsSynchronous(final boolean moveToTop, final List<FeedItem> items) {
         if (items.isEmpty()) {
             return;
@@ -871,6 +907,83 @@ public class DBWriter {
 
         if (queueModified) {
             adapter.setQueue(queue);
+            for (QueueEvent event : events) {
+                EventBus.getDefault().post(event);
+            }
+        } else {
+            Log.w(TAG, "moveToTop: " + moveToTop +  " - Queue was not modified.");
+        }
+        adapter.close();
+    }
+
+    // TODO(dominik): Remove 'df_' prefix when legacy queue handling is removed.
+    /**
+     * Moves the given FeedItem objects to the top of the legacy queue.
+     * The items' relative order among themselves is preserved.
+     *
+     * <p>This operation runs asynchronously on the database thread.</p>
+     *
+     * @param items The list of {@link FeedItem} objects to move.
+     * @return A Future object that can be used to wait for the operation's completion.
+     */
+    public static Future<?> df_moveQueueItemsToTop(final long queueId, final List<FeedItem> items) {
+        return runOnDbThread(() -> df_moveQueueItemsSynchronous(queueId, items, true));
+    }
+
+    // TODO(dominik): Remove 'df_' prefix when legacy queue handling is removed.
+    /**
+     * Moves the given FeedItem objects to the bottom of the legacy queue.
+     * The items' relative order among themselves is preserved.
+     *
+     * <p>This operation runs asynchronously on the database thread.</p>
+     *
+     * @param items The list of {@link FeedItem} objects to move.
+     * @return A Future object that can be used to wait for the operation's completion.
+     */
+    public static Future<?> df_moveQueueItemsToBottom(final long queueId, final List<FeedItem> items) {
+        return runOnDbThread(() -> df_moveQueueItemsSynchronous(queueId, items, false));
+    }
+
+    // TODO(dominik): Remove 'df_' prefix when legacy queue handling is removed.
+    /**
+     * Synchronous implementation for moving items to the top or bottom of the legacy queue.
+     *
+     * <p>This method reads the entire legacy queue into memory, modifies the list,
+     * and then saves the entire list back to the database using
+     * {@link PodDBAdapter#setQueue(List)}.</p>
+     *
+     * @param moveToTop True to move items to the top (index 0), false to move to the bottom.
+     * @param items     The list of FeedItems to move.
+     */
+    private static void df_moveQueueItemsSynchronous(final long queueId, final List<FeedItem> items, boolean moveToTop) {
+        if (items.isEmpty()) {
+            return;
+        }
+
+        final PodDBAdapter adapter = PodDBAdapter.getInstance();
+        adapter.open();
+        final List<FeedItem> queue = DBReader.df_getFeedItemsInQueue(queueId);
+
+        List<FeedItem> selectedItems = moveToTop ? new ArrayList<>(items) : items;
+        if (moveToTop) {
+            Collections.reverse(selectedItems);
+        }
+
+        boolean queueModified = false;
+        List<QueueEvent> events = new ArrayList<>();
+
+        queue.removeAll(selectedItems);
+        events.add(QueueEvent.setQueue(queue));
+
+        for (FeedItem item : selectedItems) {
+            int newIndex = moveToTop ? 0 : queue.size();
+            queue.add(newIndex, item);
+            events.add(QueueEvent.moved(item, newIndex));
+            queueModified = true;
+        }
+
+        if (queueModified) {
+            adapter.df_setQueue(queueId, queue);
             for (QueueEvent event : events) {
                 EventBus.getDefault().post(event);
             }

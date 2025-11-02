@@ -597,6 +597,36 @@ public class DBWriter {
         });
     }
 
+    // TODO(dominik): Remove 'df_' prefix when legacy queue handling is removed.
+    /**
+     * Permanently deletes a specific queue and all of its associated queue items
+     * from the database.
+     *
+     * <p>This operation runs asynchronously on the database thread. It will call
+     * {@link PodDBAdapter#df_removeQueueAndQueueItems(long)} which should
+     * remove the queue from {@link PodDBAdapter#TABLE_NAME_QUEUES} and all
+     * its items from {@link PodDBAdapter#TABLE_NAME_QUEUE_ITEMS}.</p>
+     *
+     * <p>After the database operation, this method posts a global
+     * {@link de.danoeh.antennapod.event.QueueEvent#cleared()} event to
+     * notify the UI to refresh.</p>
+     *
+     * @param context A context used for the database connection.
+     * @param queueId The ID of the queue (from {@link PodDBAdapter#TABLE_NAME_QUEUES})
+     *      to be permanently deleted.
+     * @return A Future object that can be used to wait for the operation's completion.
+     */
+    public static Future<?> df_removeQueue(final Context context, final long queueId) {
+        return runOnDbThread(() -> {
+            PodDBAdapter adapter = PodDBAdapter.getInstance();
+            adapter.open();
+            adapter.df_removeQueueAndQueueItems(queueId);
+            adapter.close();
+
+            EventBus.getDefault().post(QueueEvent.cleared());
+        });
+    }
+
     // TODO(dominik): Delete when legacy queue handling is removed.
     /**
      * Removes a FeedItem object from the queue.

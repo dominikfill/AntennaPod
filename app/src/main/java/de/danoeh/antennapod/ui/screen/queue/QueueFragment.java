@@ -287,6 +287,11 @@ public class QueueFragment extends Fragment implements MaterialToolbar.OnMenuIte
     @Override
     public boolean onMenuItemClick(MenuItem item) {
         final int itemId = item.getItemId();
+        if (itemId == R.id.queues_dialog) {
+            QueuesDialogFragment.newInstance()
+                    .show(requireActivity().getSupportFragmentManager(), QueuesDialogFragment.TAG);
+            return true;
+        }
         if (itemId == R.id.queue_lock) {
             toggleQueueLock();
             return true;

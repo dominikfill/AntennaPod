@@ -89,6 +89,13 @@
         <item quantity="other">Total size of %d episodes on the device</item>
     </plurals>
 
+    <!-- Queues Dialog Fragment -->
+    <string name="queues_dialog_label">Queues</string>
+    <string name="select_queue_label">Select queue</string>
+    <string name ="add_queue_label">Add queue</string>
+    <string name ="delete_queue_label">Delete queue</string>
+    <string name ="queue_name_label">Queue Name</string>
+
     <!-- Main activity -->
     <string name="drawer_open">Open menu</string>
     <string name="drawer_close">Close menu</string>

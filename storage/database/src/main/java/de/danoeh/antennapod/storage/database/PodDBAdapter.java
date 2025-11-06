@@ -1202,6 +1202,27 @@ public class PodDBAdapter {
 
     // TODO(dominik): Remove 'df_' prefix when legacy queue handling is removed.
     /**
+     * Returns a cursor which contains only the feed item IDs for a specific queue.
+     *
+     * <p>This is a lightweight query that only selects the {@link #KEY_FEEDITEM}
+     * column from the {@link #TABLE_NAME_QUEUES} table. It should be used
+     * when only the item IDs are needed, not the full item data.</p>
+     *
+     * @param queueId The ID of the queue (from {@link #KEY_QUEUE}) to retrieve.
+     * @return A non-null cursor containing the feed item IDs, ordered by their queue position
+     *      ({@link #KEY_POSITION} ASC).
+     */
+    public Cursor getQueuedFeedItemsIdsCursor(final long queueId) {
+        final String query = "SELECT " + KEY_FEEDITEM
+                + " FROM " + TABLE_NAME_QUEUES
+                + " WHERE " + KEY_QUEUE + " = ?"
+                + " ORDER BY " + TABLE_NAME_QUEUES + "." + KEY_POSITION;
+
+        return db.rawQuery(query, new String[]{ String.valueOf(queueId) });
+    }
+
+    // TODO(dominik): Remove 'df_' prefix when legacy queue handling is removed.
+    /**
      * Returns a cursor which contains all feed items for a specific queue,
      * joined with their media and feed data.
      *

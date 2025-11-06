@@ -451,6 +451,43 @@ public class DBWriter {
         });
     }
 
+    /**
+     * Inserts a FeedItem in the queue at the specified index. The 'read'-attribute of the FeedItem will be set to
+     * true. If the FeedItem is already in the queue, the queue will not be modified.
+     *
+     * @param context             A context that is used for opening a database connection.
+     * @param itemId              ID of the FeedItem that should be added to the queue.
+     * @param index               Destination index. Must be in range 0..queue.size()
+     * @throws IndexOutOfBoundsException if index < 0 || index >= queue.size()
+     */
+    public static Future<?> df_addItemToQueueAt(final Context context,
+                                                final long queueId,
+                                                final long itemId,
+                                                final int index) {
+        return runOnDbThread(() -> {
+            final PodDBAdapter adapter = PodDBAdapter.getInstance();
+            adapter.open();
+            final List<FeedItem> queue = DBReader.df_getFeedItemsInQueue(queueId);
+
+            if (!itemListContains(queue, itemId)) {
+                FeedItem item = DBReader.getFeedItem(itemId);
+                if (item != null) {
+                    queue.add(index, item);
+                    adapter.df_setQueue(queueId, queue);
+                    item.addTag(FeedItem.TAG_QUEUE);
+                    EventBus.getDefault().post(QueueEvent.added(item, index));
+                    EventBus.getDefault().post(FeedItemEvent.updated(item));
+                    if (item.isNew()) {
+                        DBWriter.markItemPlayed(FeedItem.UNPLAYED, item.getId());
+                    }
+                }
+            }
+
+            adapter.close();
+            AutoDownloadManager.getInstance().autodownloadUndownloadedItems(context);
+        });
+    }
+
     // TODO(dominik): Remove 'df_' prefix when legacy queue handling is removed.
     /**
      * Adds one or more FeedItem objects to a specific queue.

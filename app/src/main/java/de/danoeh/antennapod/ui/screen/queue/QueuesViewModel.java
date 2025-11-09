@@ -55,6 +55,16 @@ public class QueuesViewModel extends ViewModel {
     }
 
     /**
+     * Returns the LiveData for the currently selected queue.
+     * The UI can observe this to react to queue selection changes.
+     *
+     * @return A LiveData object containing the selected {@link Queue}.
+     */
+    public LiveData<Queue> getSelectedQueue() {
+        return selectedQueue;
+    }
+
+    /**
      * Updates the selected queue LiveData.
      * This is typically called when the user taps on a queue in the list.
      *
@@ -105,15 +115,15 @@ public class QueuesViewModel extends ViewModel {
                     DBWriter.df_createQueue(context, queueName).get();
                     return true;
                 })
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(
-                        success -> loadQueues(),
-                        error -> {
-                            Log.e(TAG, "Failed to add queue", error);
-                            errorMessage.postValue("Failed to add queue: " + error.getMessage());
-                        }
-                )
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(
+                                success -> loadQueues(),
+                                error -> {
+                                    Log.e(TAG, "Failed to add queue", error);
+                                    errorMessage.postValue("Failed to add queue: " + error.getMessage());
+                                }
+                        )
         );
     }
 
@@ -146,15 +156,15 @@ public class QueuesViewModel extends ViewModel {
                     DBWriter.df_removeQueue(context, queueId).get();
                     return true;
                 })
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(
-                        success -> loadQueues(),
-                        error -> {
-                            Log.e(TAG, "Failed to delete queue", error);
-                            errorMessage.postValue("Failed to delete queue: " + error.getMessage());
-                        }
-                )
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(
+                                success -> loadQueues(),
+                                error -> {
+                                    Log.e(TAG, "Failed to delete queue", error);
+                                    errorMessage.postValue("Failed to delete queue: " + error.getMessage());
+                                }
+                        )
         );
     }
 

@@ -36,7 +36,7 @@ public class QueuesDialogFragment extends DialogFragment implements QueuesRecycl
         LayoutInflater inflater = requireActivity().getLayoutInflater();
         QueuesDialogBinding binding = QueuesDialogBinding.inflate(inflater, null, false);
 
-        viewModel = new ViewModelProvider(this).get(QueuesViewModel.class);
+        viewModel = new ViewModelProvider(requireActivity()).get(QueuesViewModel.class);
         adapter = new QueuesRecyclerAdapter(this);
         binding.queuesList.setLayoutManager(new LinearLayoutManager(getContext()));
         binding.queuesList.setAdapter(adapter);

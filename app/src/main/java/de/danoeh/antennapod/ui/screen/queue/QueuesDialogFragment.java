@@ -22,12 +22,34 @@ import de.danoeh.antennapod.model.queue.Queue;
 public class QueuesDialogFragment extends DialogFragment implements QueuesRecyclerAdapter.QueueClickListener {
 
     public static final String TAG = "QueuesDialogFragment";
+    private static final String ARG_FEED_ITEM_ID = "argFeedItemId";
 
     private QueuesViewModel viewModel;
     private QueuesRecyclerAdapter adapter;
+    private long feedItemIdToAdd = -1;
 
     public static QueuesDialogFragment newInstance() {
         return new QueuesDialogFragment();
+    }
+
+    public static QueuesDialogFragment newInstance(long feedItemId) {
+        QueuesDialogFragment fragment = new QueuesDialogFragment();
+        Bundle args = new Bundle();
+        args.putLong(ARG_FEED_ITEM_ID, feedItemId);
+        fragment.setArguments(args);
+        return fragment;
+    }
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        viewModel = new ViewModelProvider(requireActivity()).get(QueuesViewModel.class);
+        adapter = new QueuesRecyclerAdapter(this);
+
+        if (getArguments() != null) {
+            feedItemIdToAdd = getArguments().getLong(ARG_FEED_ITEM_ID, -1);
+        }
     }
 
     @NonNull
@@ -36,8 +58,6 @@ public class QueuesDialogFragment extends DialogFragment implements QueuesRecycl
         LayoutInflater inflater = requireActivity().getLayoutInflater();
         QueuesDialogBinding binding = QueuesDialogBinding.inflate(inflater, null, false);
 
-        viewModel = new ViewModelProvider(requireActivity()).get(QueuesViewModel.class);
-        adapter = new QueuesRecyclerAdapter(this);
         binding.queuesList.setLayoutManager(new LinearLayoutManager(getContext()));
         binding.queuesList.setAdapter(adapter);
 
@@ -65,10 +85,13 @@ public class QueuesDialogFragment extends DialogFragment implements QueuesRecycl
             }
         });
 
+        String title = (feedItemIdToAdd != -1)
+                ? getString(R.string.add_to_queue_label) : getString(R.string.select_queue_label);
+
         viewModel.loadQueues();
 
         return new MaterialAlertDialogBuilder(requireContext())
-                .setTitle(R.string.queues_dialog_label)
+                .setTitle(title)
                 .setView(binding.getRoot())
                 .create();
 
@@ -79,7 +102,11 @@ public class QueuesDialogFragment extends DialogFragment implements QueuesRecycl
      */
     @Override
     public void onQueueClicked(Queue queue) {
-        viewModel.onQueueSelected(queue);
+        if (feedItemIdToAdd != -1) {
+            viewModel.addItemToQueue(getContext(), feedItemIdToAdd, queue.getId());
+        } else {
+            viewModel.onQueueSelected(queue);
+        }
         dismiss();
     }
 

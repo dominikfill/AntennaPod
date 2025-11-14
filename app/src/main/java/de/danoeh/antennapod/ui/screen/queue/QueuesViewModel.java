@@ -9,6 +9,7 @@ import androidx.lifecycle.ViewModel;
 
 import java.util.List;
 
+import de.danoeh.antennapod.model.feed.FeedItem;
 import de.danoeh.antennapod.model.queue.Queue;
 import de.danoeh.antennapod.storage.database.DBReader;
 import de.danoeh.antennapod.storage.database.DBWriter;
@@ -163,6 +164,36 @@ public class QueuesViewModel extends ViewModel {
                                 error -> {
                                     Log.e(TAG, "Failed to delete queue", error);
                                     errorMessage.postValue("Failed to delete queue: " + error.getMessage());
+                                }
+                        )
+        );
+    }
+
+    /**
+     * Adds a specific FeedItem to a specific queue.
+     *
+     * <p>The database operation is performed on an IO thread. On failure,
+     * an error message is posted to {@link #errorMessage}.
+     *
+     * @param context The application context, required for database operations.
+     * @param feedItemId The ID of the FeedItem to add.
+     * @param queueId The ID of the queue to add the item to.
+     */
+    public void addItemToQueue(Context context, long feedItemId, long queueId) {
+        disposables.add(
+                Observable.fromCallable(() -> {
+                    FeedItem feedItem = DBReader.getFeedItem(feedItemId);
+                    DBWriter.df_addFeedItemToQueue(context, queueId, feedItem);
+                    return true;
+                })
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(
+                                success -> {
+                                    Log.e(TAG, "Item " + feedItemId + "added to queue " + queueId); },
+                                error -> {
+                                    Log.e(TAG, "Failed to add item to queue", error);
+                                    errorMessage.postValue("Failed to add item: " + error.getMessage());
                                 }
                         )
         );

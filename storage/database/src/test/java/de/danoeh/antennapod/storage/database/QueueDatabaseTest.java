@@ -262,7 +262,7 @@ public class QueueDatabaseTest {
         DBWriter.df_addFeedItemToQueue(context, DEFAULT_QUEUE_ID, itemInQueue).get();
 
         List<FeedItem> itemsToLoad = List.of(itemInQueue, itemNotInQueue);
-        DBReader.df_loadAdditionalFeedItemListData(itemsToLoad);
+        DBReader.loadAdditionalFeedItemListData(itemsToLoad);
 
         assertTrue(itemInQueue.isTagged(FeedItem.TAG_QUEUE));
         assertFalse(itemNotInQueue.isTagged(FeedItem.TAG_QUEUE));

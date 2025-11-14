@@ -100,30 +100,6 @@ public final class DBReader {
         }
     }
 
-    /**
-     * Loads additional data in to the feed items from other database queries
-     *
-     * @param items the FeedItems who should have other data loaded
-     */
-    public static void loadAdditionalFeedItemListData(List<FeedItem> items) {
-        loadTagsOfFeedItemList(items);
-        loadFeedDataOfFeedItemList(items);
-    }
-
-    private static void loadTagsOfFeedItemList(List<FeedItem> items) {
-        LongList favoriteIds = getFavoriteIDList();
-        LongList queueIds = getQueueIDList();
-
-        for (FeedItem item : items) {
-            if (favoriteIds.contains(item.getId())) {
-                item.addTag(FeedItem.TAG_FAVORITE);
-            }
-            if (queueIds.contains(item.getId())) {
-                item.addTag(FeedItem.TAG_QUEUE);
-            }
-        }
-    }
-
     // TODO(dominik): Remove 'df_' prefix when legacy queue handling is removed.
     /**
      * Populates a list of {@link FeedItem} objects with additional data
@@ -132,8 +108,8 @@ public final class DBReader {
      *
      * @param items The list of {@link FeedItem} objects to populate.
      */
-    public static void df_loadAdditionalFeedItemListData(List<FeedItem> items) {
-        df_loadTagsOfFeedItemList(items);
+    public static void loadAdditionalFeedItemListData(List<FeedItem> items) {
+        loadTagsOfFeedItemList(items);
         loadFeedDataOfFeedItemList(items);
     }
 
@@ -147,7 +123,7 @@ public final class DBReader {
      * @param items The list of {@link FeedItem} objects to populate with tags.
      * This list is modified in-place.
      */
-    private static void df_loadTagsOfFeedItemList(List<FeedItem> items) {
+    private static void loadTagsOfFeedItemList(List<FeedItem> items) {
         LongList favoriteIds = getFavoriteIDList();
         List<QueueItem> queueItems = df_getAllQueueItems();
 
@@ -397,7 +373,7 @@ public final class DBReader {
         adapter.open();
         try (FeedItemCursor cursor = new FeedItemCursor(adapter.df_getQueuedFeedItemsCursor(queueId))) {
             List<FeedItem> items = extractFeedItemlistFromCursor(cursor);
-            df_loadAdditionalFeedItemListData(items);
+            loadAdditionalFeedItemListData(items);
             return items;
         } finally {
             adapter.close();

@@ -95,7 +95,7 @@ public class QueueDatabaseTest {
         assertEquals(2, DBReader.df_getQueuedFeedItems(DEFAULT_QUEUE_ID).size());
         assertEquals(2, DBReader.df_getQueuedFeedItems(queueBId).size());
 
-        DBWriter.df_removeQueueItems(context, false, item1.getId(), item3.getId()).get();
+        DBWriter.df_dequeueFeedItems(context, false, item1.getId(), item3.getId()).get();
 
         List<FeedItem> queueA = DBReader.df_getQueuedFeedItems(DEFAULT_QUEUE_ID);
         assertEquals(1, queueA.size());
@@ -192,7 +192,7 @@ public class QueueDatabaseTest {
 
         DBWriter.df_addFeedItemToQueue(context, DEFAULT_QUEUE_ID, item1, item2, item3).get();
 
-        DBWriter.df_removeQueueItem(context, false, item2).get();
+        DBWriter.df_dequeueFeedItem(context, false, item2).get();
 
         List<FeedItem> queue = DBReader.df_getQueuedFeedItems(DEFAULT_QUEUE_ID);
         assertEquals(2, queue.size());
@@ -209,7 +209,7 @@ public class QueueDatabaseTest {
 
         DBWriter.df_addFeedItemToQueue(context, DEFAULT_QUEUE_ID, item1, item2, item3, item4).get();
 
-        DBWriter.df_removeQueueItems(context, false, item1.getId(), item3.getId()).get();
+        DBWriter.df_dequeueFeedItems(context, false, item1.getId(), item3.getId()).get();
 
         List<FeedItem> queue = DBReader.df_getQueuedFeedItems(DEFAULT_QUEUE_ID);
         assertEquals(2, queue.size());

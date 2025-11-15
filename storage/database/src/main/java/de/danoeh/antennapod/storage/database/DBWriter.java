@@ -739,9 +739,9 @@ public class DBWriter {
      * @param performAutoDownload true if an auto-download process should be started after the operation.
      * @param item                FeedItem that should be removed.
      */
-    public static Future<?> df_removeQueueItem(final Context context,
-                                            final boolean performAutoDownload, final FeedItem item) {
-        return runOnDbThread(() -> df_removeQueueItemSynchronous(context, performAutoDownload, item.getId()));
+    public static Future<?> df_dequeueFeedItem(final Context context,
+                                               final boolean performAutoDownload, final FeedItem item) {
+        return runOnDbThread(() -> df_dequeueFeedItemsSynchronous(context, performAutoDownload, item.getId()));
     }
 
     // TODO(dominik): Remove 'df_' prefix when legacy queue handling is removed.
@@ -753,9 +753,9 @@ public class DBWriter {
      * @param performAutoDownload true if an auto-download process should be started after the operation.
      * @param itemIds             IDs of the FeedItems that should be removed.
      */
-    public static Future<?> df_removeQueueItems(final Context context, final boolean performAutoDownload,
-                                            final long... itemIds) {
-        return runOnDbThread(() -> df_removeQueueItemSynchronous(context, performAutoDownload, itemIds));
+    public static Future<?> df_dequeueFeedItems(final Context context, final boolean performAutoDownload,
+                                                final long... itemIds) {
+        return runOnDbThread(() -> df_dequeueFeedItemsSynchronous(context, performAutoDownload, itemIds));
     }
 
     // TODO(dominik): Remove 'df_' prefix when legacy queue handling is removed.
@@ -770,9 +770,9 @@ public class DBWriter {
      * @param performAutoDownload true if an auto-download process should be started.
      * @param itemIds             The IDs of the feed items to remove.
      */
-    private static void df_removeQueueItemSynchronous(final Context context,
-                                                   final boolean performAutoDownload,
-                                                   final long... itemIds) {
+    private static void df_dequeueFeedItemsSynchronous(final Context context,
+                                                       final boolean performAutoDownload,
+                                                       final long... itemIds) {
         if (itemIds.length < 1) {
             return;
         }
@@ -797,7 +797,7 @@ public class DBWriter {
         Set<Long>  affectedQueueIds = new HashSet<>();
         try (Cursor cursor = adapter.df_getQueueItemsInfoCursor(inClause, selectionArgs)) {
             if (!cursor.moveToFirst()) {
-                Log.w(TAG, "Queue was not modified by call to df_removeQueueItem()");
+                Log.w(TAG, "Queue was not modified by call to df_dequeueFeedItem()");
                 adapter.close();
                 return;
             }

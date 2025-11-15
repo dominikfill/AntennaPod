@@ -806,7 +806,7 @@ public class QueueFragment extends Fragment implements MaterialToolbar.OnMenuIte
         private void reallyMoved(int from, int to) {
             // Write drag operation to database
             Log.d(TAG, "Write to database move(" + from + ", " + to + ")");
-            DBWriter.moveQueueItem(from, to, true);
+            DBWriter.df_moveQueueItem(currentQueueId, from, to, true);
         }
 
     }

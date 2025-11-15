@@ -397,6 +397,14 @@ public class QueueFragment extends Fragment implements MaterialToolbar.OnMenuIte
 
         final int itemId = item.getItemId();
         if (!recyclerAdapter.inActionMode()) {
+            if (itemId == R.id.remove_from_queue_item) {
+                DBWriter.df_dequeueFeedItem(requireContext(), false,  selectedItem);
+                queue.remove(position);
+                recyclerAdapter.notifyItemRemoved(position);
+                refreshToolbarState();
+                refreshInfoBar();
+                return true;
+            }
             if (itemId == R.id.move_to_top_item) {
                 queue.add(0, queue.remove(position));
                 recyclerAdapter.notifyItemMoved(position, 0);

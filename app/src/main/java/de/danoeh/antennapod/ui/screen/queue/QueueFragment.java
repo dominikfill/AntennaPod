@@ -96,8 +96,6 @@ public class QueueFragment extends Fragment implements MaterialToolbar.OnMenuIte
     private SwipeRefreshLayout swipeRefreshLayout;
     private boolean displayUpArrow;
 
-    private List<FeedItem> queue;
-
     private static final String PREFS = "QueueFragment";
     private static final String PREF_SHOW_LOCK_WARNING = "show_lock_warning";
 
@@ -108,6 +106,7 @@ public class QueueFragment extends Fragment implements MaterialToolbar.OnMenuIte
     private QueuesViewModel viewModel;
     private final MutableLiveData<Queue> currentQueue = new MutableLiveData<>();
     private long currentQueueId = -1;
+    private List<FeedItem> queue;
 
     private FloatingSelectMenu floatingSelectMenu;
     private ProgressBar progressBar;
@@ -170,9 +169,6 @@ public class QueueFragment extends Fragment implements MaterialToolbar.OnMenuIte
                 recyclerAdapter.notifyItemRemoved(position);
                 break;
             case CLEARED:
-                queue.clear();
-                recyclerAdapter.updateItems(queue);
-                break;
             case MOVED:
                 position = FeedItemEvent.indexOfItemWithId(queue, event.item.getId());
                 queue.add(event.position, queue.remove(position));
@@ -320,7 +316,8 @@ public class QueueFragment extends Fragment implements MaterialToolbar.OnMenuIte
                 public void onConfirmButtonPressed(
                         DialogInterface dialog) {
                     dialog.dismiss();
-                    DBWriter.clearQueue();
+                    DBWriter.df_clearQueue(currentQueueId);
+                    loadItems();
                 }
             };
             conDialog.createNewDialog().show();

@@ -87,6 +87,7 @@ public class QueueFragment extends Fragment implements MaterialToolbar.OnMenuIte
     private static final String KEY_UP_ARROW = "up_arrow";
     private static final String SCROLL_POSITION_KEY = "scroll_position";
     private static final String SCROLL_OFFSET_KEY = "scroll_offset";
+    private static final String LAST_DISPLAYED_QUEUE_ID = "last_displayed_queue_id";
 
     private TextView infoBar;
     private EpisodeItemListRecyclerView recyclerView;
@@ -536,6 +537,18 @@ public class QueueFragment extends Fragment implements MaterialToolbar.OnMenuIte
             }
 
             if (!currentIsValid) {
+                long preferredQueueId = prefs.getLong(LAST_DISPLAYED_QUEUE_ID, queues.get(0).getId());
+
+                for (Queue queue : queues) {
+                    if (queue.getId() == preferredQueueId) {
+                        queueToDisplay = queue; // Found valid queue from prefs!
+                        currentIsValid = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!currentIsValid) {
                 queueToDisplay = queues.get(0);
             }
 
@@ -560,6 +573,8 @@ public class QueueFragment extends Fragment implements MaterialToolbar.OnMenuIte
                 currentQueueId = newQueueId;
                 toolbar.setTitle(queue.getName());
                 loadItems();
+
+                prefs.edit().putLong(LAST_DISPLAYED_QUEUE_ID, newQueueId).apply();
             }
         });
 
